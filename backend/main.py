@@ -26,13 +26,22 @@ def get_allowed_origins() -> list[str]:
         "http://127.0.0.1:5174",
     ]
     configured_origins = os.getenv("CORS_ORIGINS") or os.getenv("FRONTEND_URL", "")
-    origins = [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+    origins = [
+        origin.strip().rstrip("/")
+        for origin in configured_origins.split(",")
+        if origin.strip()
+    ]
     return [*default_origins, *origins]
+
+
+def get_allowed_origin_regex():
+    return os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
+    allow_origin_regex=get_allowed_origin_regex(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
