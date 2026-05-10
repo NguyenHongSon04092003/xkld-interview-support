@@ -16,15 +16,19 @@ services:
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 60
+        value: "60"
       - key: FRONTEND_URL
         sync: false
       - key: PYTHON_VERSION
-        value: 3.11.11
+        value: "3.11.11"
       - key: PHOBERT_ENABLED
-        value: false
+        value: "false"
       - key: VIETNAMESE_TOKENIZER_ENABLED
-        value: false
+        value: "false"
+      - key: PHOBERT_SERVICE_URL
+        sync: false
+      - key: PHOBERT_SERVICE_TIMEOUT
+        value: "60"
 
 databases:
   - name: xkld-postgres

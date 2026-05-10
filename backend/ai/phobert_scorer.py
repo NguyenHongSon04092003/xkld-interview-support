@@ -3,6 +3,8 @@ import re
 import threading
 import unicodedata
 
+import requests
+
 from models.interview_question import InterviewQuestion
 from models.question_keyword import QuestionKeyword
 
@@ -103,6 +105,14 @@ class PhoBERTScorer:
             .all()
         ]
 
+        service_result = self._score_with_remote_service(
+            answer_text=answer_text,
+            sample_answer=sample_answer,
+            keywords=keywords,
+        )
+        if service_result is not None:
+            return service_result
+
         print(
             "[PhoBERTScorer] question_id=",
             question_id,
@@ -180,6 +190,46 @@ class PhoBERTScorer:
             "semantic_score": round(semantic_score, 2),
             "keyword_score": round(keyword_score, 2),
             "feedback": feedback,
+        }
+
+    def _score_with_remote_service(self, answer_text, sample_answer, keywords):
+        service_url = os.getenv("PHOBERT_SERVICE_URL", "").strip().rstrip("/")
+        if not service_url:
+            return None
+
+        timeout = float(os.getenv("PHOBERT_SERVICE_TIMEOUT", "60"))
+
+        try:
+            response = requests.post(
+                f"{service_url}/score",
+                json={
+                    "answer_text": answer_text,
+                    "sample_answer": sample_answer,
+                    "keywords": keywords,
+                },
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except Exception as exc:
+            print(f"[PhoBERTScorer] remote scoring failed: {exc}")
+            return None
+
+        required_keys = {
+            "content_score",
+            "semantic_score",
+            "keyword_score",
+            "feedback",
+        }
+        if not required_keys.issubset(data):
+            print("[PhoBERTScorer] remote scoring response missing keys")
+            return None
+
+        return {
+            "content_score": round(float(data["content_score"]), 2),
+            "semantic_score": round(float(data["semantic_score"]), 2),
+            "keyword_score": round(float(data["keyword_score"]), 2),
+            "feedback": str(data["feedback"]),
         }
 
     def _normalize_text(self, text):
