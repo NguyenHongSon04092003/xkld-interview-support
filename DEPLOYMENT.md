@@ -37,6 +37,7 @@ SECRET_KEY=<generate-a-long-random-secret>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 FRONTEND_URL=<your Vercel frontend URL>
+PYTHON_VERSION=3.11.11
 ```
 
 If you need more than one frontend origin, use `CORS_ORIGINS` instead:
