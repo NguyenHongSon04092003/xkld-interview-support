@@ -38,6 +38,8 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 FRONTEND_URL=<your Vercel frontend URL>
 PYTHON_VERSION=3.11.11
+PHOBERT_ENABLED=false
+VIETNAMESE_TOKENIZER_ENABLED=false
 ```
 
 If you need more than one frontend origin, use `CORS_ORIGINS` instead:
@@ -100,4 +102,5 @@ On Render, run these from the backend service shell.
 ## Notes
 
 - This backend uses heavy AI/ML dependencies such as `torch`, `transformers`, and `underthesea`. Very small/free server plans may fail during build or run out of memory.
+- On Render Free, keep `PHOBERT_ENABLED=false` and `VIETNAMESE_TOKENIZER_ENABLED=false`. The app will use lightweight keyword/length fallback scoring instead of loading PhoBERT at startup.
 - Uploaded files under `backend/uploads/` are created at runtime. For production uploads that must survive redeploys, attach persistent storage or move uploads to cloud storage.

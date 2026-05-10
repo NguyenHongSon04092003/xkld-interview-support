@@ -1,4 +1,3 @@
-import threading
 from decimal import Decimal
 from typing import List, Optional
 
@@ -71,21 +70,6 @@ def get_db():
         db.close()
 
 
-def start_model_loading():
-    thread = threading.Thread(
-        target=_load_model_safely,
-        daemon=True,
-    )
-    thread.start()
-
-
-def _load_model_safely():
-    try:
-        phobert_scorer.load_model()
-    except Exception as exc:
-        print(f"PhoBERT model load failed: {exc}")
-
-
 def ensure_session_owner_or_manager(session: MockInterviewSession, current_user: User) -> None:
     is_owner = (
         current_user.role == UserRole.candidate
@@ -98,11 +82,6 @@ def ensure_session_owner_or_manager(session: MockInterviewSession, current_user:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to score this interview session",
         )
-
-
-@router.on_event("startup")
-def startup_event():
-    start_model_loading()
 
 
 @router.post("/content", response_model=ContentScoreResponse)

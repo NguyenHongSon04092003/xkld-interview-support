@@ -1,10 +1,7 @@
+import os
+import re
 import threading
 import unicodedata
-
-import torch
-from sklearn.metrics.pairwise import cosine_similarity
-from transformers import AutoModel, AutoTokenizer
-from underthesea import word_tokenize
 
 from models.interview_question import InterviewQuestion
 from models.question_keyword import QuestionKeyword
@@ -21,6 +18,10 @@ class PhoBERTScorer:
         self._lock = threading.Lock()
 
     def load_model(self):
+        if os.getenv("PHOBERT_ENABLED", "false").lower() != "true":
+            self.load_error = "PhoBERT model is disabled"
+            return
+
         with self._lock:
             if self.is_loaded or self.is_loading:
                 return
@@ -28,6 +29,8 @@ class PhoBERTScorer:
             self.load_error = None
 
         try:
+            from transformers import AutoModel, AutoTokenizer
+
             tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             model = AutoModel.from_pretrained(self.model_name)
             model.eval()
@@ -47,6 +50,8 @@ class PhoBERTScorer:
     def get_embedding(self, text):
         if not self.is_loaded or self.tokenizer is None or self.model is None:
             raise RuntimeError("Model dang khoi dong")
+
+        import torch
 
         normalized_text = self._normalize_text(text)
         inputs = self.tokenizer(
@@ -75,7 +80,7 @@ class PhoBERTScorer:
 
         embedding1 = self.get_embedding(text1).reshape(1, -1)
         embedding2 = self.get_embedding(text2).reshape(1, -1)
-        similarity = cosine_similarity(embedding1, embedding2)[0][0]
+        similarity = self._cosine_similarity(embedding1, embedding2)
 
         return max(0.0, min(float(similarity) * 100, 100.0))
 
@@ -182,7 +187,7 @@ class PhoBERTScorer:
         if not text:
             return ""
 
-        return word_tokenize(text, format="text")
+        return " ".join(self._tokenize(text))
 
     def _normalize_for_matching(self, text):
         text = (text or "").strip().lower()
@@ -216,7 +221,30 @@ class PhoBERTScorer:
         return 80.0
 
     def _count_words(self, text):
-        return len(word_tokenize(text or ""))
+        return len(self._tokenize(text or ""))
+
+    def _tokenize(self, text):
+        text = text or ""
+
+        if os.getenv("VIETNAMESE_TOKENIZER_ENABLED", "false").lower() == "true":
+            try:
+                from underthesea import word_tokenize
+
+                return word_tokenize(text)
+            except Exception as exc:
+                print(f"[PhoBERTScorer] underthesea tokenizer failed: {exc}")
+
+        return re.findall(r"\w+", text, flags=re.UNICODE)
+
+    def _cosine_similarity(self, embedding1, embedding2):
+        dot_product = float((embedding1 * embedding2).sum())
+        norm1 = float((embedding1 * embedding1).sum() ** 0.5)
+        norm2 = float((embedding2 * embedding2).sum() ** 0.5)
+
+        if norm1 == 0.0 or norm2 == 0.0:
+            return 0.0
+
+        return dot_product / (norm1 * norm2)
 
     def _compute_keyword_fallback_score(
         self,

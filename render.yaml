@@ -21,6 +21,10 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.11.11
+      - key: PHOBERT_ENABLED
+        value: false
+      - key: VIETNAMESE_TOKENIZER_ENABLED
+        value: false
 
 databases:
   - name: xkld-postgres
