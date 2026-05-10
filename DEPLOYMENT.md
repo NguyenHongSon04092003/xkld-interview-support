@@ -38,6 +38,7 @@ SECRET_KEY=<generate-a-long-random-secret>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 FRONTEND_URL=<your Vercel frontend URL>
+ENABLE_API_DOCS=false
 PYTHON_VERSION=3.11.11
 PHOBERT_ENABLED=false
 VIETNAMESE_TOKENIZER_ENABLED=false
@@ -137,4 +138,5 @@ On Render, run these from the backend service shell.
 
 - The Render backend is intentionally lightweight. PhoBERT runs in the separate Hugging Face Space.
 - If `PHOBERT_SERVICE_URL` is empty or unavailable, the backend falls back to lightweight keyword/length scoring.
+- Keep `ENABLE_API_DOCS=false` in production so `/docs`, `/redoc`, and `/openapi.json` are not exposed publicly.
 - Uploaded files under `backend/uploads/` are created at runtime. For production uploads that must survive redeploys, attach persistent storage or move uploads to cloud storage.

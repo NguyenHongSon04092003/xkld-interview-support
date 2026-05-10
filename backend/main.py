@@ -15,7 +15,17 @@ from routers import mock_interview
 from routers import recommendation
 from routers import scoring
 
-app = FastAPI()
+
+def is_api_docs_enabled():
+    return os.getenv("ENABLE_API_DOCS", "false").lower() == "true"
+
+
+api_docs_enabled = is_api_docs_enabled()
+app = FastAPI(
+    docs_url="/docs" if api_docs_enabled else None,
+    redoc_url="/redoc" if api_docs_enabled else None,
+    openapi_url="/openapi.json" if api_docs_enabled else None,
+)
 
 
 def get_allowed_origins() -> list[str]:
@@ -35,7 +45,7 @@ def get_allowed_origins() -> list[str]:
 
 
 def get_allowed_origin_regex():
-    return os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+    return os.getenv("CORS_ORIGIN_REGEX") or None
 
 
 app.add_middleware(
